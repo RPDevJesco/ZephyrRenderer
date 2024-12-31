@@ -1,324 +1,261 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace ZephyrRenderer.Platform
 {
     internal static class Cocoa
     {
-        private const string CocoaLib = "/System/Library/Frameworks/Cocoa.framework/Cocoa";
-        private const string MetalLib = "/System/Library/Frameworks/Metal.framework/Metal";
-        private const string MetalKitLib = "/System/Library/Frameworks/MetalKit.framework/MetalKit";
-        
-        #region Basic Structures
+        // Constants for window/view ordering
+        public const int NSWindowAbove = 1;
+        public const int NSWindowBelow = -1;
+        public const int NSWindowOut = 0;
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct NSPoint
-        {
-            public double X;
-            public double Y;
-        }
+        // Basic AppKit functions
+        [DllImport("/System/Library/Frameworks/AppKit.framework/AppKit")]
+        public static extern void NSApplicationLoad();
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct NSSize
-        {
-            public double Width;
-            public double Height;
-        }
+        // Basic Objective-C runtime functions
+        [DllImport("/usr/lib/libobjc.A.dylib")]
+        public static extern IntPtr objc_getClass(string name);
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct NSRect
-        {
-            public NSPoint Origin;
-            public NSSize Size;
-            
-            public NSRect(double x, double y, double width, double height)
-            {
-                Origin = new NSPoint { X = x, Y = y };
-                Size = new NSSize { Width = width, Height = height };
-            }
-        }
+        [DllImport("/usr/lib/libobjc.A.dylib")]
+        public static extern IntPtr sel_registerName(string name);
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MTLOrigin
-        {
-            public ulong x;
-            public ulong y;
-            public ulong z;
-        }
+        // objc_msgSend variants - all with EntryPoint="objc_msgSend"
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector);
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MTLSize
-        {
-            public ulong width;
-            public ulong height;
-            public ulong depth;
-        }
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, Rectangle rect);
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MTLRegion
-        {
-            public MTLOrigin origin;
-            public MTLSize size;
-        }
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, string arg1);
 
-        #endregion
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, IntPtr arg1);
 
-        #region Constants
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, Rectangle rect, ulong style, ulong bufferingType, bool defer);
 
-        public const ulong NSWindowStyleMaskTitled = 1 << 0;
-        public const ulong NSWindowStyleMaskClosable = 1 << 1;
-        public const ulong NSWindowStyleMaskMiniaturizable = 1 << 2;
-        public const ulong NSWindowStyleMaskResizable = 1 << 3;
-        public const ulong NSBackingStoreBuffered = 2;
-        public const long NSApplicationActivationPolicyRegular = 0;
-        public static readonly IntPtr NSRunLoopDefaultMode = objc_getClass("NSRunLoopDefaultMode");
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_void(IntPtr receiver, IntPtr selector, IntPtr arg1);
 
-        #endregion
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_bool(IntPtr receiver, IntPtr selector, bool arg1);
 
-        #region Metal Library
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newLibrary(IntPtr device, IntPtr source, out IntPtr error);
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend_Init(IntPtr receiver, IntPtr selector, Rectangle rect);
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLLibrary_newFunction(IntPtr library, string functionName);
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern Size objc_msgSend_CGSize(IntPtr receiver, IntPtr selector);
 
-        #endregion
+        // Class creation and method adding
+        [DllImport("/usr/lib/libobjc.A.dylib")]
+        public static extern IntPtr objc_allocateClassPair(IntPtr superclass, string name, int extraBytes);
 
-        #region Objective-C Runtime
-        
-        [DllImport(CocoaLib)]
-        public static extern IntPtr objc_getClass(string className);
-
-        [DllImport(CocoaLib)]
-        public static extern IntPtr sel_registerName(string selectorName);
-
-        [DllImport(CocoaLib)]
-        public static extern IntPtr objc_allocateClassPair(IntPtr superclass, string name, IntPtr extraBytes);
-
-        [DllImport(CocoaLib)]
+        [DllImport("/usr/lib/libobjc.A.dylib")]
         public static extern void objc_registerClassPair(IntPtr cls);
 
-        [DllImport(CocoaLib)]
+        [DllImport("/usr/lib/libobjc.A.dylib")]
         public static extern bool class_addMethod(IntPtr cls, IntPtr sel, IntPtr imp, string types);
 
-        [DllImport(CocoaLib, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr objc_msgSend(IntPtr self, IntPtr selector);
+        // Helper methods that use objc_msgSend internally
+        public static IntPtr NSGraphicsContext_currentContext()
+        {
+            IntPtr nsGraphicsContextClass = objc_getClass("NSGraphicsContext");
+            IntPtr currentContextSelector = sel_registerName("currentContext");
+            return objc_msgSend(nsGraphicsContextClass, currentContextSelector);
+        }
 
-        [DllImport(CocoaLib, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr objc_msgSend(IntPtr self, IntPtr selector, IntPtr arg1);
+        public static IntPtr NSGraphicsContext_CGContext(IntPtr graphicsContext)
+        {
+            if (graphicsContext == IntPtr.Zero)
+                return IntPtr.Zero;
 
-        #endregion
+            IntPtr cgContextSelector = sel_registerName("CGContext");
+            return objc_msgSend(graphicsContext, cgContextSelector);
+        }
 
-        #region NSApplication
+        public static Size NSImage_size(IntPtr nsImage)
+        {
+            if (nsImage == IntPtr.Zero)
+                throw new ArgumentNullException(nameof(nsImage));
 
-        [DllImport(CocoaLib)]
-        public static extern IntPtr NSApplication_sharedApplication();
-        
-        [DllImport(CocoaLib)]
-        public static extern void NSApplication_setActivationPolicy(IntPtr app, long activationPolicy);
-        
-        [DllImport(CocoaLib)]
-        public static extern void NSApplication_activateIgnoringOtherApps(IntPtr app, bool flag);
+            IntPtr sizeSelector = sel_registerName("size");
+            return objc_msgSend_CGSize(nsImage, sizeSelector);
+        }
 
-        [DllImport(CocoaLib)]
-        public static extern IntPtr NSApplication_nextEventMatchingMask(
-            IntPtr app,
-            ulong mask,
-            IntPtr expiration,
-            IntPtr mode,
-            bool deqFlag);
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend_CGImage(IntPtr receiver, IntPtr selector, ref Rectangle rect, IntPtr context, IntPtr hints);
 
-        [DllImport(CocoaLib)]
-        public static extern void NSApplication_sendEvent(IntPtr app, IntPtr evt);
+        [DllImport("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")]
+        public static extern void CGContextDrawImage(IntPtr context, Rectangle rect, IntPtr image);
 
-        [DllImport(CocoaLib)]
-        public static extern void NSApplication_run(IntPtr app);
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_AddSubview(IntPtr receiver, IntPtr selector, IntPtr view, int position, IntPtr relativeTo);
 
-        #endregion
+        public static IntPtr NSImage_CGImageForProposedRect(IntPtr nsImage, ref Rectangle proposedRect, IntPtr context, IntPtr hints)
+        {
+            if (nsImage == IntPtr.Zero)
+                throw new ArgumentNullException(nameof(nsImage));
 
-        #region NSWindow
+            IntPtr selector = sel_registerName("CGImageForProposedRect:context:hints:");
+            return objc_msgSend_CGImage(nsImage, selector, ref proposedRect, context, hints);
+        }
+    }
 
-        [DllImport(CocoaLib)]
-        public static extern IntPtr NSWindow_alloc();
-        
-        [DllImport(CocoaLib)]
-        public static extern IntPtr NSWindow_initWithContentRect(
-            IntPtr window,
-            NSRect contentRect,
-            ulong windowStyle,
-            ulong bufferingType,
-            bool deferCreation);
-            
-        [DllImport(CocoaLib)]
-        public static extern void NSWindow_setTitle(IntPtr window, IntPtr title);
-        
-        [DllImport(CocoaLib)]
-        public static extern void NSWindow_makeKeyAndOrderFront(IntPtr window, IntPtr sender);
+    internal static class NSApplicationWrapper
+    {
+        public static void Load()
+        {
+            Cocoa.NSApplicationLoad();
+        }
 
-        [DllImport(CocoaLib)]
-        public static extern void NSWindow_setContentView(IntPtr window, IntPtr view);
+        public static IntPtr Create()
+        {
+            IntPtr appClass = Cocoa.objc_getClass("NSApplication");
+            IntPtr sharedAppSelector = Cocoa.sel_registerName("sharedApplication");
+            return Cocoa.objc_msgSend(appClass, sharedAppSelector);
+        }
 
-        [DllImport(CocoaLib)]
-        public static extern void NSWindow_setDelegate(IntPtr window, IntPtr delegate_);
+        public static void Activate(IntPtr app)
+        {
+            IntPtr activateIgnoringOtherAppsSelector = Cocoa.sel_registerName("activateIgnoringOtherApps:");
+            Cocoa.objc_msgSend_bool(app, activateIgnoringOtherAppsSelector, true);
+        }
 
-        [DllImport(CocoaLib)]
-        public static extern void NSWindow_close(IntPtr window);
+        public static void Run(IntPtr app)
+        {
+            IntPtr runSelector = Cocoa.sel_registerName("run");
+            Cocoa.objc_msgSend(app, runSelector);
+        }
+    }
 
-        #endregion
+    internal static class NSButtonWrapper
+    {
+        public static IntPtr Create(Rectangle rect, string title)
+        {
+            IntPtr buttonClass = Cocoa.objc_getClass("NSButton");
+            IntPtr allocSelector = Cocoa.sel_registerName("alloc");
+            IntPtr initWithFrameSelector = Cocoa.sel_registerName("initWithFrame:");
+            IntPtr setTitleSelector = Cocoa.sel_registerName("setTitle:");
 
-        #region Metal Device & Command Queue
+            IntPtr button = Cocoa.objc_msgSend(buttonClass, allocSelector);
+            button = Cocoa.objc_msgSend(button, initWithFrameSelector, rect);
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLCreateSystemDefaultDevice();
-        
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newCommandQueue(IntPtr device);
+            IntPtr nsStringClass = Cocoa.objc_getClass("NSString");
+            IntPtr stringWithUTF8StringSelector = Cocoa.sel_registerName("stringWithUTF8String:");
+            IntPtr buttonTitle = Cocoa.objc_msgSend(nsStringClass, stringWithUTF8StringSelector, title);
+            Cocoa.objc_msgSend(button, setTitleSelector, buttonTitle);
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newLibrary(IntPtr device, IntPtr source, IntPtr error);
+            return button;
+        }
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newRenderPipelineState(IntPtr device, IntPtr descriptor);
+        public static void SetTarget(IntPtr button, IntPtr target, string action)
+        {
+            IntPtr setTargetSelector = Cocoa.sel_registerName("setTarget:");
+            IntPtr setActionSelector = Cocoa.sel_registerName("setAction:");
+            IntPtr actionSelector = Cocoa.sel_registerName(action);
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newBuffer(IntPtr device, IntPtr pointer, ulong length, ulong options);
+            Cocoa.objc_msgSend(button, setTargetSelector, target);
+            Cocoa.objc_msgSend(button, setActionSelector, actionSelector);
+        }
+    }
 
-        #endregion
+    public static class NSViewWrapper
+    {
+        private static readonly IntPtr nsViewClass = Cocoa.objc_getClass("NSView");
+        private static readonly IntPtr addSubviewSelector = Cocoa.sel_registerName("addSubview:");
+        private static readonly IntPtr removeFromSuperviewSelector = Cocoa.sel_registerName("removeFromSuperview");
+        private static readonly IntPtr setWantsBestResolutionOpenGLSurfaceSelector = Cocoa.sel_registerName("setWantsBestResolutionOpenGLSurface:");
 
-        #region Metal Pipeline State
+        public static IntPtr Create(Rectangle frame)
+        {
+            IntPtr view = Cocoa.objc_msgSend(nsViewClass, Cocoa.sel_registerName("alloc"));
+            view = Cocoa.objc_msgSend(view, Cocoa.sel_registerName("initWithFrame:"), frame);
+            return view;
+        }
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLRenderPipelineDescriptor_alloc();
+        public static void AddSubview(IntPtr parentView, IntPtr childView)
+        {
+            Cocoa.objc_msgSend(parentView, addSubviewSelector, childView);
+        }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderPipelineDescriptor_setVertexFunction(IntPtr descriptor, IntPtr function);
+        public static void AddSubviewPositioned(IntPtr parentView, IntPtr childView, bool above)
+        {
+            var selector = Cocoa.sel_registerName("addSubview:positioned:relativeTo:");
+            var position = above ? Cocoa.NSWindowAbove : Cocoa.NSWindowBelow;
+            Cocoa.objc_msgSend_AddSubview(parentView, selector, childView, position, IntPtr.Zero);
+        }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderPipelineDescriptor_setFragmentFunction(IntPtr descriptor, IntPtr function);
+        public static void RemoveSubview(IntPtr parentView, IntPtr childView)
+        {
+            Cocoa.objc_msgSend(childView, removeFromSuperviewSelector);
+        }
+    }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderPipelineDescriptor_setColorAttachment(
-            IntPtr descriptor,
-            ulong index,
-            uint pixelFormat,
-            bool blendingEnabled,
-            bool alphaBlendingEnabled);
+    internal static class NSWindowWrapper
+    {
+        public static IntPtr Create(Rectangle rect)
+        {
+            IntPtr windowClass = Cocoa.objc_getClass("NSWindow");
+            IntPtr allocSelector = Cocoa.sel_registerName("alloc");
+            IntPtr initSelector = Cocoa.sel_registerName("initWithContentRect:styleMask:backing:defer:");
+            IntPtr makeKeyAndOrderFrontSelector = Cocoa.sel_registerName("makeKeyAndOrderFront:");
 
-        #endregion
+            IntPtr window = Cocoa.objc_msgSend(windowClass, allocSelector);
+            window = Cocoa.objc_msgSend(window, initSelector, rect, 15, 2, false);
+            Cocoa.objc_msgSend(window, makeKeyAndOrderFrontSelector, IntPtr.Zero);
 
-        #region Metal Command Buffer & Encoder
+            // Create a container view and set it as the content view
+            IntPtr containerView = NSViewWrapper.Create(rect);
+            SetContentView(window, containerView);
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLCommandQueue_commandBuffer(IntPtr commandQueue);
+            return window;
+        }
 
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLCommandBuffer_renderCommandEncoderWithDescriptor(
-            IntPtr commandBuffer,
-            IntPtr renderPassDescriptor);
+        public static void SetContentView(IntPtr window, IntPtr view)
+        {
+            IntPtr setContentViewSelector = Cocoa.sel_registerName("setContentView:");
+            Cocoa.objc_msgSend(window, setContentViewSelector, view);
+        }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLCommandBuffer_presentDrawable(IntPtr commandBuffer, IntPtr drawable);
+        public static void AddSubview(IntPtr window, IntPtr subview)
+        {
+            IntPtr contentView = GetContentView(window);
+            NSViewWrapper.AddSubview(contentView, subview);
+        }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLCommandBuffer_commit(IntPtr commandBuffer);
+        private static IntPtr GetContentView(IntPtr window)
+        {
+            IntPtr contentViewSelector = Cocoa.sel_registerName("contentView");
+            return Cocoa.objc_msgSend(window, contentViewSelector);
+        }
+    }
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderCommandEncoder_setRenderPipelineState(
-            IntPtr encoder,
-            IntPtr pipelineState);
+    internal static class ButtonClickHandler
+    {
+        private delegate void ButtonClickedDelegate(IntPtr self, IntPtr cmd);
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderCommandEncoder_setVertexBuffer(
-            IntPtr encoder,
-            IntPtr buffer,
-            ulong offset,
-            ulong index);
+        public static event EventHandler ButtonClickedEvent;
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderCommandEncoder_setFragmentTexture(
-            IntPtr encoder,
-            IntPtr texture,
-            ulong index);
+        public static IntPtr Create()
+        {
+            IntPtr classHandle = Cocoa.objc_getClass("NSObject");
+            IntPtr instance = Cocoa.objc_msgSend(classHandle, Cocoa.sel_registerName("alloc"));
+            instance = Cocoa.objc_msgSend(instance, Cocoa.sel_registerName("init"));
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderCommandEncoder_drawPrimitives(
-            IntPtr encoder,
-            uint primitiveType,
-            ulong vertexStart,
-            ulong vertexCount);
+            ButtonClickedDelegate buttonClickedDelegate = ButtonClicked;
+            IntPtr buttonClickedSelector = Cocoa.sel_registerName("buttonClicked:");
+            IntPtr imp = Marshal.GetFunctionPointerForDelegate(buttonClickedDelegate);
+            Cocoa.class_addMethod(classHandle, buttonClickedSelector, imp, "v@:@");
 
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderCommandEncoder_endEncoding(IntPtr encoder);
+            return instance;
+        }
 
-        #endregion
-
-        #region Metal Texture
-
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLTextureDescriptor_texture2DDescriptorWithPixelFormat(
-            uint pixelFormat,
-            ulong width,
-            ulong height,
-            bool mipmapped);
-
-        [DllImport(MetalLib)]
-        public static extern IntPtr MTLDevice_newTextureWithDescriptor(IntPtr device, IntPtr descriptor);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLTexture_replaceRegion(
-            IntPtr texture,
-            MTLRegion region,
-            ulong level,
-            IntPtr pixelBytes,
-            ulong bytesPerRow);
-
-        #endregion
-
-        #region MetalKit View
-
-        [DllImport(MetalKitLib)]
-        public static extern IntPtr MTKView_alloc();
-
-        [DllImport(MetalKitLib)]
-        public static extern IntPtr MTKView_initWithFrame(IntPtr view, NSRect frame, IntPtr device);
-
-        [DllImport(MetalKitLib)]
-        public static extern void MTKView_setDevice(IntPtr view, IntPtr device);
-
-        [DllImport(MetalKitLib)]
-        public static extern void MTKView_setColorPixelFormat(IntPtr view, uint pixelFormat);
-
-        [DllImport(MetalKitLib)]
-        public static extern IntPtr MTKView_currentDrawable(IntPtr view);
-
-        [DllImport(MetalKitLib)]
-        public static extern IntPtr MTKView_currentRenderPassDescriptor(IntPtr view);
-
-        #endregion
-
-        #region Memory Management
-
-        [DllImport(CocoaLib)]
-        public static extern void NSObject_release(IntPtr obj);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLTexture_release(IntPtr texture);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLTextureDescriptor_release(IntPtr descriptor);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLBuffer_release(IntPtr buffer);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLRenderPipelineState_release(IntPtr pipelineState);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLCommandQueue_release(IntPtr commandQueue);
-
-        [DllImport(MetalLib)]
-        public static extern void MTLLibrary_release(IntPtr library);
-
-        #endregion
+        private static void ButtonClicked(IntPtr self, IntPtr cmd)
+        {
+            Console.WriteLine("Button clicked!");
+            ButtonClickedEvent?.Invoke(null, EventArgs.Empty);
+        }
     }
 }

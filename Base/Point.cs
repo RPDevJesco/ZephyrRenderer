@@ -1,4 +1,4 @@
-namespace ZephyrRenderer.UI
+namespace ZephyrRenderer
 {
     public class Point
     {

@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using static ZephyrRenderer.Platform.Win32;
 
-namespace ZephyrRenderer.Platform
+namespace ZephyrRenderer.Renderer
 {
     public class WindowsRenderer : IRenderer
     {
@@ -31,6 +31,17 @@ namespace ZephyrRenderer.Platform
             RegisterWindowClass();
             CreateWindowHandle(title, width, height);
             InitializeGraphics(width, height);
+        }
+
+        public IntPtr CreateWindow(string title, int width, int height)
+        {
+            Initialize(title, width, height); // Reuse the existing logic
+            return hwnd; // Return the window handle
+        }
+
+        public IntPtr GetWindowHandle()
+        {
+            return hwnd;
         }
 
         private void RegisterWindowClass()
@@ -85,8 +96,8 @@ namespace ZephyrRenderer.Platform
                 bmiHeader = new BITMAPINFOHEADER
                 {
                     biSize = (uint)Marshal.SizeOf<BITMAPINFOHEADER>(),
-                    biWidth = framebuffer.Width,
-                    biHeight = -framebuffer.Height,
+                    biWidth = (int)framebuffer.Width,
+                    biHeight = (int)-framebuffer.Height,
                     biPlanes = 1,
                     biBitCount = 32,
                     biCompression = BI_RGB
@@ -107,7 +118,7 @@ namespace ZephyrRenderer.Platform
             BitBlt(
                 hdc,
                 0, 0,
-                framebuffer.Width, framebuffer.Height,
+                (int)framebuffer.Width, (int)framebuffer.Height,
                 memDC,
                 0, 0,
                 SRCCOPY

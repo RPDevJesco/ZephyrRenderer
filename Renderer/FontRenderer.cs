@@ -184,7 +184,7 @@ namespace ZephyrRenderer.UI
                 { true, true, false, true, true },
                 { true, false, false, false, true }
             },
-                        ['X'] = new bool[,] {
+            ['X'] = new bool[,] {
                 { true, false, false, false, true },
                 { true, false, false, false, true },
                 { false, true, false, true, false },

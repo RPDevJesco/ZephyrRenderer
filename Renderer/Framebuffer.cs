@@ -4,17 +4,17 @@ namespace ZephyrRenderer
 {
     public class Framebuffer : IDisposable
     {
-        private readonly int width;
-        private readonly int height;
+        private readonly double width;
+        private readonly double height;
         private readonly byte[] buffer;
         private readonly GCHandle bufferHandle;
         private bool disposed;
 
-        public int Width => width;
-        public int Height => height;
+        public double Width => width;
+        public double Height => height;
         public IntPtr BufferPtr => bufferHandle.AddrOfPinnedObject();
-        public int Stride => width * 4;
-        public int BufferSize => width * height * 4;
+        public double Stride => width * 4;
+        public double BufferSize => width * height * 4;
 
         public Framebuffer(int width, int height)
         {
@@ -26,6 +26,12 @@ namespace ZephyrRenderer
             this.buffer = new byte[width * height * 4];
             this.bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
         }
+        
+        public byte[] GetBuffer()
+        {
+            return buffer;
+        }
+        
 
         public void Clear(Color color)
         {
@@ -38,16 +44,16 @@ namespace ZephyrRenderer
             }
         }
 
-        public void SetPixel(int x, int y, Color color)
+        public void SetPixel(double x, double y, Color color)
         {
             if (x < 0 || x >= width || y < 0 || y >= height)
                 return;
 
-            int index = (y * width + x) * 4;
-            buffer[index] = color.B;     // Blue
-            buffer[index + 1] = color.G; // Green
-            buffer[index + 2] = color.R; // Red
-            buffer[index + 3] = color.A; // Alpha
+            double index = (y * width + x) * 4;
+            buffer[(int)index] = color.B;     // Blue
+            buffer[(int)(index + 1)] = color.G; // Green
+            buffer[(int)(index + 2)] = color.R; // Red
+            buffer[(int)(index + 3)] = color.A; // Alpha
         }
 
         public Color GetPixel(int x, int y)
@@ -55,28 +61,28 @@ namespace ZephyrRenderer
             if (x < 0 || x >= width || y < 0 || y >= height)
                 return Color.Transparent;
 
-            int index = (y * width + x) * 4;
+            double index = (y * width + x) * 4;
             return new Color(
-                buffer[index + 2], // Red
-                buffer[index + 1], // Green
-                buffer[index],     // Blue
-                buffer[index + 3]  // Alpha
+                buffer[(int)(index + 2)], // Red
+                buffer[(int)(index + 1)], // Green
+                buffer[(int)index],     // Blue
+                buffer[(int)(index + 3)]  // Alpha
             );
         }
 
-        public void DrawLine(int x1, int y1, int x2, int y2, Color color)
+        public void DrawLine(double x1, double y1, double x2, double y2, Color color)
         {
-            int dx = Math.Abs(x2 - x1);
-            int dy = Math.Abs(y2 - y1);
-            int sx = x1 < x2 ? 1 : -1;
-            int sy = y1 < y2 ? 1 : -1;
-            int err = dx - dy;
+            double dx = Math.Abs(x2 - x1);
+            double dy = Math.Abs(y2 - y1);
+            double sx = x1 < x2 ? 1 : -1;
+            double sy = y1 < y2 ? 1 : -1;
+            double err = dx - dy;
 
             while (true)
             {
                 SetPixel(x1, y1, color);
                 if (x1 == x2 && y1 == y2) break;
-                int e2 = 2 * err;
+                double e2 = 2 * err;
                 if (e2 > -dy)
                 {
                     err -= dy;
@@ -90,7 +96,7 @@ namespace ZephyrRenderer
             }
         }
 
-        public void DrawRect(int x, int y, int width, int height, Color color)
+        public void DrawRect(double x, double y, double width, double height, Color color)
         {
             DrawLine(x, y, x + width, y, color);
             DrawLine(x + width, y, x + width, y + height, color);
@@ -98,11 +104,11 @@ namespace ZephyrRenderer
             DrawLine(x, y + height, x, y, color);
         }
 
-        public void FillRect(int x, int y, int width, int height, Color color)
+        public void FillRect(double x, double y, double width, double height, Color color)
         {
-            for (int py = y; py < y + height; py++)
+            for (double py = y; py < y + height; py++)
             {
-                for (int px = x; px < x + width; px++)
+                for (double px = x; px < x + width; px++)
                 {
                     SetPixel(px, py, color);
                 }

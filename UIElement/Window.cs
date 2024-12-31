@@ -1,5 +1,4 @@
-using ZephyrRenderer.Platform;
-using ZephyrRenderer.UI;
+using ZephyrRenderer.Renderer;
 
 namespace ZephyrRenderer.UIElement
 {
@@ -15,8 +14,10 @@ namespace ZephyrRenderer.UIElement
         {
             renderer = CreatePlatformRenderer();
             framebuffer = new Framebuffer(width, height);
-            
-            renderer.Initialize(title, width, height);
+
+            IntPtr windowHandle = renderer.CreateWindow(title, width, height);
+            if (windowHandle == IntPtr.Zero)
+                throw new Exception("Failed to create window.");
             Bounds = new Rectangle { Width = width, Height = height };
 
             // Hook up to the renderer's mouse events
@@ -32,7 +33,7 @@ namespace ZephyrRenderer.UIElement
             if (OperatingSystem.IsWindows())
                 return new WindowsRenderer();
             else if (OperatingSystem.IsMacOS())
-                return new MacOSRenderer();
+                return new MacRenderer();
             else if (OperatingSystem.IsLinux())
                 throw new PlatformNotSupportedException("Linux support coming soon");
     

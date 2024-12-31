@@ -2,7 +2,7 @@ using ZephyrRenderer.UI;
 
 namespace ZephyrRenderer.UIElement
 {
-    public class Button : UI.UIElement
+    public class Button : UI.UIElement, IButton
     {
         public string Text { get; set; } = "";
         public Color TextColor { get; set; } = new Color(0, 0, 0);
@@ -19,13 +19,29 @@ namespace ZephyrRenderer.UIElement
         private bool isHovered;
         private bool isPressed;
         private bool wasPressed;
+        string IButton.Text { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        bool IButton.IsEnabled { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public event EventHandler? Click;
+
+        event EventHandler? IButton.Click
+        {
+            add
+            {
+                Click += value; // Add the new handler to the invocation list
+            }
+            remove
+            {
+                Click -= value; // Remove the handler from the invocation list
+            }
+        }
 
         protected override void OnDraw(Framebuffer framebuffer)
         {
             // Determine the current state colors
-            var backgroundColor = IsEnabled ? 
-                (isPressed ? PressedColor : 
-                 isHovered ? HoverColor : 
+            var backgroundColor = IsEnabled ?
+                (isPressed ? PressedColor :
+                 isHovered ? HoverColor :
                  BackgroundColor) :
                 new Color(150, 150, 150); // Disabled state
 
@@ -64,8 +80,8 @@ namespace ZephyrRenderer.UIElement
             if (!string.IsNullOrEmpty(Text))
             {
                 int textWidth = FontRenderer.MeasureText(Text);
-                int textX = Bounds.X + (Bounds.Width - textWidth) / 2;
-                int textY = Bounds.Y + (Bounds.Height - 7) / 2; // 7 is the font height
+                double textX = Bounds.X + (Bounds.Width - textWidth) / 2;
+                double textY = Bounds.Y + (Bounds.Height - 7) / 2; // 7 is the font height
 
                 // If pressed, offset text slightly to enhance button press effect
                 if (isPressed)
@@ -77,8 +93,8 @@ namespace ZephyrRenderer.UIElement
                 FontRenderer.DrawText(
                     framebuffer,
                     Text,
-                    textX,
-                    textY,
+                    (int)textX,
+                    (int)textY,
                     IsEnabled ? TextColor : new Color(120, 120, 120)
                 );
             }
@@ -131,15 +147,19 @@ namespace ZephyrRenderer.UIElement
             return isInBounds;
         }
 
-        public void SetEnabled(bool enabled)
+        void IDisposable.Dispose()
         {
-            if (!enabled)
-            {
-                isHovered = false;
-                isPressed = false;
-                wasPressed = false;
-            }
-            IsEnabled = enabled;
+
+        }
+
+        void IButton.Draw(Framebuffer framebuffer)
+        {
+            OnDraw(framebuffer);
+        }
+
+        void IButton.Initialize(double x, double y, double width, double height, string title)
+        {
+
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using ZephyrRenderer;
-using ZephyrRenderer.UI;
 using ZephyrRenderer.UIElement;
 
 class Program
@@ -127,8 +126,8 @@ class AnimatedPanel : Panel
         );
 
         // Draw bouncing ball
-        int ballX = Bounds.X + xPos;
-        int ballY = Bounds.Y + yPos;
+        double ballX = Bounds.X + xPos;
+        double ballY = Bounds.Y + yPos;
         framebuffer.FillRect(ballX, ballY - 20, 40, 40, ballColor);
 
         // Update ball position
